@@ -1,0 +1,11 @@
+./coef_mat/*
+./result/*
+./exp_data/*
+./num_data/*
+*.tif
+*.jpg
+*.png
+*.pdf
+*.asv
+*.mat
+*.fig
