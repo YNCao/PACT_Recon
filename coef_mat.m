@@ -8,11 +8,12 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%
 % Optional parameters
-N = 128;                                            % size of image [pixel]
+N = 64;                                            % size of image [pixel]
 sensor_radius = floor(N * sqrt(2) / 2 + 2) - 1;     % sensor radius [pixel]
 sensor_num = 128;
 theta_start = 0;                                    % [deg]
-theta_end = 360-360/sensor_num;                     % [deg]
+range = 360;
+theta_end = range-range/sensor_num;                     % [deg]
 
 %%  
 theta = linspace(theta_start, theta_end, sensor_num);       % angular distribution of sensors
@@ -24,23 +25,24 @@ P = paradon(I0, theta, sensor_radius, 1);        % spherical radon transform
 A = sparse(m*n, N*N);
 
 % separate system matrix into batches to solve memory overflow
-batch = 4;
+batch = 8;
 %%
 tic
 for i = 1 : batch
     % f = waitbar(0, 'Please wait...');
     A1=zeros(m*n, N*N/batch);    %coefficient matrix
-    for ii=1:N*N/4
+    for ii=1:N*N/batch
         temp=zeros(N);
-        temp(ii + (i-1)*N*N/4)=1;
+        temp(ii + (i-1)*N*N/batch)=1;
         A1(:,ii)=reshape(paradon(temp,theta,sensor_radius,1),m*n,1);
         if ~mod(ii, 100)
             % waitbar(ii / N^2, f, sprintf('%.2f%% finished',100 * ii / N^2));
-            ii/N/N+(i-1)/4
+            ii/N/N+(i-1)/batch
         end
     end
     % close(f);
     A(:, (1+(i-1)*N*N/batch : i*N*N/batch)) = A1;
+    clear A1
     i
 end
 toc
