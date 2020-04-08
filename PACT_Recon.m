@@ -22,15 +22,17 @@ order = 2;
 tmp = ones(N);
 s_tmp = paradon(tmp, theta, sensor_radius, 1);
 [m, n] = size(s_tmp);
+clear tmp s_tmp
 if order == 2
-    column = [0, -0.5, zeros(1, m*n-3), 0.5];
-    D = sparse(toeplitz(column, -column));
+    D = diag(sparse(1/2*ones(1, m*n-1)),1) + diag(sparse(-1/2*ones(1, m*n-1)),-1);
+    D(1, m*n) = -1/2; D(m*n, 1) = 1/2;
 elseif order == 4
-    column = [0, -2/3, 1/12, zeros(1, m*n-5), -1/12, 2/3];
-    D = sparse(toeplitz(column, -column));
+    D = diag(sparse(2/3*ones(1, m*n-1)), 1) + diag(sparse(-2/3*ones(1, m*n-1)),-1) ...
+        + diag(sparse(-1/12*ones(1, m*n-2)),2) + diag(sparse(1/12*ones(1, m*n-2)),-2);
+    D(1, end-1:end) = [1/12, -2/3]; D(2, end) = 1/12; 
+    D(end-1:end, 1) = [-1/12, 2/3]; D(end, 2) = -1/12;
 end
 
-clear tmp s_tmp
 %%
 % load data
 if datasourse == 1
@@ -60,7 +62,7 @@ p = reshape(P, m*n, 1);
 load('coef_mat\CoefMat_128_0_357.1875_128.mat');
 
 if datatype == 0
-    A = D*A;
+    A = D * A;
 end
 %%
 %Reconstruction
