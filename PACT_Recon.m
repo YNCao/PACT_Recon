@@ -1,47 +1,55 @@
-edit%PACT_Recon
+%PACT_Recon
 clear
 clc
 %%
-% load data
-
-data_type = 2;
-
-% set image
-N = 128;    %size of image
-sensor_radius = floor(N * sqrt(2) / 2 + 2) - 1;
-I0=phantom(N);
-%I0=makeDisc(N,N,N/2,N/2,10);
-% % I0=zeros(N);
-% % I0(N/4:3*N/4,N/4:3*N/4)=1;
-
-% add noise
-I0 = I0 + 0.03 * randn(N, N);
-
+% chose: simulation or experiment; velocity potential or acoustic pressure
+%            1             0                1                    0
+datasourse = 0;
+datatype = 0;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % set sensor parameter
+N = 128;                                                 % size of image [pixel]
+sensor_radius = floor(N * sqrt(2) / 2 + 2) - 1;          % sensor radius [pixel]
 sensor_num = 128;
-theta_start = 0;                                    % [deg]
-theta_end = 360-360/sensor_num;                     % [deg]
-theta = linspace(theta_start, theta_end, sensor_num);       % angular distribution of sensors
+theta_start = 0;                                         % [deg]
+range = 360;                                             % [deg]
+theta_end = range-range/sensor_num;                      % [deg]
+theta = linspace(theta_start, theta_end, sensor_num);    % angular distribution of sensors
 
-% velocity potential
-P = paradon(I0, theta, sensor_radius, 1);
-% diffrential
-if data_type == 2
-    P_ = P;
-    P_(end-1:end,:) = [];
-    P_ = [zeros(2,sensor_num);P_];
-    P = (P-P_)/2;
+% calculate differential matrix
+order = 2;
+tmp = ones(N);
+s_tmp = paradon(tmp, theta, sensor_radius, 1);
+[m, n] = size(s_tmp);
+if order == 2
+    column = [0, -0.5, zeros(1, m*n-3), 0.5];
+    D = sparse(toeplitz(column, -column));
+elseif order == 4
+    column = [0, -2/3, 1/12, zeros(1, m*n-5), -1/12, 2/3];
+    D = sparse(toeplitz(column, -column));
 end
 
-exp = 1;
-if exp == 1
+clear tmp s_tmp
+%%
+% load data
+if datasourse == 1
+    % simulation
+    I0=phantom(N);
+    % add noise
+    I0 = I0 + 0.03 * randn(N, N);
+    % velocity potential
+    P = paradon(I0, theta, sensor_radius, 1);
+    % velocity potential -> acoustic pressure
+    if data_type == 2
+        P = D * P;
+    end
+elseif datasourse == 0
+    % experiment
     P = load('ustc.mat');
     P = P.pa;
-%     P = fliplr(P);
 end
 
-[m,n] = size(P);
 % P = P + 0.03 * randn(m, n);
 % P(P<0) = 0;
 p = reshape(P, m*n, 1);
@@ -51,11 +59,8 @@ p = reshape(P, m*n, 1);
 
 load('coef_mat\CoefMat_128_0_357.1875_128.mat');
 
-if data_type == 2
-    A_ = A;
-    A_(end-1:end, :)=[];
-    A_ = [zeros(2, size(A,2)); A_];
-    A = (A-A_)/2;
+if datatype == 0
+    A = D*A;
 end
 %%
 %Reconstruction

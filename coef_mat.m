@@ -7,13 +7,15 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%
+clear
+clc
 % Optional parameters
-N = 64;                                            % size of image [pixel]
+N = 128;                                             % size of image [pixel]
 sensor_radius = floor(N * sqrt(2) / 2 + 2) - 1;     % sensor radius [pixel]
 sensor_num = 128;
 theta_start = 0;                                    % [deg]
-range = 360;
-theta_end = range-range/sensor_num;                     % [deg]
+range = 360;                                        % [deg]
+theta_end = range-range/sensor_num;                 % [deg]
 
 %%  
 theta = linspace(theta_start, theta_end, sensor_num);       % angular distribution of sensors
