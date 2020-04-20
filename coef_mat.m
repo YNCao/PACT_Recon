@@ -10,9 +10,9 @@
 clear
 clc
 % Optional parameters
-N = 128;                                             % size of image [pixel]
+N = 64;                                             % size of image [pixel]
 sensor_radius = floor(N * sqrt(2) / 2 + 2) - 1;     % sensor radius [pixel]
-sensor_num = 128;
+sensor_num = 64;
 theta_start = 0;                                    % [deg]
 range = 360;                                        % [deg]
 theta_end = range-range/sensor_num;                 % [deg]
@@ -33,10 +33,11 @@ tic
 for i = 1 : batch
     % f = waitbar(0, 'Please wait...');
     A1=zeros(m*n, N*N/batch);    %coefficient matrix
-    for ii=1:N*N/batch
-        temp=zeros(N);
-        temp(ii + (i-1)*N*N/batch)=1;
-        A1(:,ii)=reshape(paradon(temp,theta,sensor_radius,1),m*n,1);
+    for ii = 1:N*N/batch
+        tmp = zeros(N);
+        tmp(ii + (i-1)*N*N/batch) = 1;
+        A1(:,ii) = reshape(paradon(tmp,theta,sensor_radius,1),m*n, 1);
+%         A1(:,ii) = reshape(paradon(imfilter(temp,fspecial('gaussian')),theta,sensor_radius,1),m*n,1);
         if ~mod(ii, 100)
             % waitbar(ii / N^2, f, sprintf('%.2f%% finished',100 * ii / N^2));
             ii/N/N+(i-1)/batch

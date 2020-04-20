@@ -40,7 +40,7 @@ for j = 1 : sensor_num
     d2 = sqrt((x - Dx(j)) .* (x - Dx(j)) + (y - Dy(j)) .* (y - Dy(j)));  %distance from jth detector to every pixel
     d2_ = d2 / deltaR;
     integer = ceil(d2_);      %integer of distance
-    remainder = d2_ - integer +1;
+    remainder = d2_ - integer + 1;
     
     % integer distance
     p = accumarray(integer, II .* (1 - abs(remainder - 0.5))); 

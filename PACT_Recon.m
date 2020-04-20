@@ -1,5 +1,5 @@
 %PACT_Recon
-clear
+% clear
 clc
 %%
 % chose: simulation or experiment; velocity potential or acoustic pressure
@@ -18,20 +18,12 @@ theta_end = range-range/sensor_num;                      % [deg]
 theta = linspace(theta_start, theta_end, sensor_num);    % angular distribution of sensors
 
 % calculate differential matrix
-order = 2;
+order = 4;
 tmp = ones(N);
 s_tmp = paradon(tmp, theta, sensor_radius, 1);
 [m, n] = size(s_tmp);
 clear tmp s_tmp
-if order == 2
-    D = diag(sparse(1/2*ones(1, m*n-1)),1) + diag(sparse(-1/2*ones(1, m*n-1)),-1);
-    D(1, m*n) = -1/2; D(m*n, 1) = 1/2;
-elseif order == 4
-    D = diag(sparse(2/3*ones(1, m*n-1)), 1) + diag(sparse(-2/3*ones(1, m*n-1)),-1) ...
-        + diag(sparse(-1/12*ones(1, m*n-2)),2) + diag(sparse(1/12*ones(1, m*n-2)),-2);
-    D(1, end-1:end) = [1/12, -2/3]; D(2, end) = 1/12; 
-    D(end-1:end, 1) = [-1/12, 2/3]; D(end, 2) = -1/12;
-end
+D = diff_mat(m*n, 4);
 
 %%
 % load data
@@ -43,9 +35,11 @@ if datasourse == 1
     % velocity potential
     P = paradon(I0, theta, sensor_radius, 1);
     % velocity potential -> acoustic pressure
-    if data_type == 2
-        P = D * P;
+    if datatype == 0
+        D_data = diff_mat(m, 4);
+        P = D_data * P;
     end
+    P = P-min(min(P))+0.01;
 elseif datasourse == 0
     % experiment
     P = load('ustc.mat');
