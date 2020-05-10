@@ -1,49 +1,70 @@
 %PACT_Recon
-% clear
+clear
 clc
 %%
-% chose: simulation or experiment; velocity potential or acoustic pressure
-%            1             0                1                    0
-datasourse = 0;
-datatype = 0;
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% set experiment type and signal type
+% exp_type: 1 -> num_data;            0 -> exp_data;     
+% sig_type: 1 -> velocity potential;  0 -> acoustic pressure
 
+exp_type = 0;
+sig_type = 1;
+
+% data path
+data_path = 'exp_data/19-06-10/3MHz/hair';
+% data_path = 'exp_data/ustc';
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % set sensor parameter
 N = 128;                                                 % size of image [pixel]
-sensor_radius = floor(N * sqrt(2) / 2 + 2) - 1;          % sensor radius [pixel]
-sensor_num = 128;
+Radius = floor(N * sqrt(2) / 2 + 2) - 1;                 % Radius [pixel]
+sensor_radius = 25;                                      % sensor radius [mm]
+sensor_num = 128;   
+fs = 62.5;                                               % sampling rate [MHz]
+% theta range
 theta_start = 0;                                         % [deg]
 range = 360;                                             % [deg]
 theta_end = range-range/sensor_num;                      % [deg]
 theta = linspace(theta_start, theta_end, sensor_num);    % angular distribution of sensors
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% signal processing
+% data_type
+% 1: structured data including SpeedOfSound, RFData and Index
+% 0: non-structured data
+data_type = 1;    
+fc = 8;                                                 % cut off frequency when filtering
+delay = 0;                                               % time delay
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % calculate differential matrix
 order = 4;
-tmp = ones(N);
-s_tmp = paradon(tmp, theta, sensor_radius, 1);
-[m, n] = size(s_tmp);
-clear tmp s_tmp
+tmp_img = ones(N);
+tmp_sig = paradon(tmp_img, theta, Radius, 1);
+[m, n] = size(tmp_sig);
+clear tmp_img tmp_sig
 D = diff_mat(m*n, 4);
 
 %%
 % load data
-if datasourse == 1
+[pa_sig, neg_vp_sig] = signal_process(data_type, data_path, fs, fc, delay, sensor_radius, m, n);
+
+if exp_type == 1
     % simulation
     I0=phantom(N);
     % add noise
     I0 = I0 + 0.03 * randn(N, N);
     % velocity potential
-    P = paradon(I0, theta, sensor_radius, 1);
+    P = paradon(I0, theta, Radius, 1);
     % velocity potential -> acoustic pressure
-    if datatype == 0
+    if sig_type == 0
         D_data = diff_mat(m, 4);
         P = D_data * P;
     end
     P = P-min(min(P))+0.01;
-elseif datasourse == 0
+elseif exp_type == 0
     % experiment
-    P = load('ustc.mat');
-    P = P.pa;
+    if sig_type == 0
+        P = pa_sig;
+    elseif sig_type == 1
+        P = neg_vp_sig;
+    end
 end
 
 % P = P + 0.03 * randn(m, n);
@@ -52,19 +73,17 @@ p = reshape(P, m*n, 1);
 
 %%
 % load coefficient matrix
-
 load('coef_mat\CoefMat_128_0_357.1875_128.mat');
-
-if datatype == 0
+if sig_type == 0
+    % if using acoustic pressure signal
     A = D * A;
 end
 %%
 %Reconstruction
-
 % choosing reconstruction method
 % case 1: ML_EM, case 2: ART, case 3: SART
 
-method = 2;
+method = 1;
 switch method
     case 1
         % ML_EM
@@ -86,7 +105,7 @@ switch method
             if mod(i, 1) == 0
                 I_ = reshape(I,N,N);
                 I_ = full(I_);
-                imshow(I_);
+                imagesc(I_);
                 fmat(i+1) = getframe;
             end
             % end iteration till convergence
@@ -137,7 +156,7 @@ switch method
                 I = I + C;
                 if mod(i,2) == 0
                     I_ = reshape(I,N,N);
-                    imshow(I_,[]);
+                    imagesc(I_);
                     fmat(i) = getframe;
                 end
             end
@@ -158,7 +177,7 @@ switch method
             I = I - alpha*res*SumA1';
             if mod(i,2) == 0
                 I_ = reshape(I,N,N);
-                imshow(I_);
+                imagesc(I_);
                 fmat(i) = getframe;
             end
         end
