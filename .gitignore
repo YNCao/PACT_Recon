@@ -2,6 +2,8 @@
 ./result/*
 ./exp_data/*
 ./num_data/*
+./recon_data/*
+./figure/*
 *.tif
 *.jpg
 *.png
